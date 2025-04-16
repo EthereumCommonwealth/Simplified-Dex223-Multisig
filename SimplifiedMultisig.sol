@@ -104,8 +104,8 @@ contract CallistoMultisig {
     {
         uint256 _current_reduction = vote_pass_threshold - txs[_txID].required_approvals;
         require(txs[_txID].required_approvals > 1, "Can't reduce votes threshold to 0");
-        require(num_owners - txs[_txID].num_votes <= _current_reduction, "Votes against can't be withdrawn");
-        
+        require(num_owners - txs[_txID].num_votes >= _current_reduction, "Votes against can't be withdrawn");
+
         uint256 _step;
         if(txs[_txID].proposed_timestamp +  (_step + _current_reduction) * execution_delay < block.timestamp)
         {
