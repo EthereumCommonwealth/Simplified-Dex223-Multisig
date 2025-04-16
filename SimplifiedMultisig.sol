@@ -29,12 +29,13 @@ contract CallistoMultisig {
         _;
     }
     
-    constructor (address _owner1, address _owner2, address _owner3, address _owner4) {
-        owner[_owner1] = true;
-        owner[_owner2] = true;
-        owner[_owner3] = true;
-        owner[_owner4] = true;
-        num_owners     = 4;
+    constructor (address _owner1, address _owner2, address _owner3, address _owner4, uint256 _vote_threshold) {
+        owner[_owner1]      = true;
+        owner[_owner2]      = true;
+        owner[_owner3]      = true;
+        owner[_owner4]      = true;
+        num_owners          = 4;
+        vote_pass_threshold = _vote_threshold;
     }
     
     // Allow it to receive ERC223 tokens and Funds transfers.
