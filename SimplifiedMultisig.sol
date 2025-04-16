@@ -72,12 +72,6 @@ contract CallistoMultisig {
         txs[num_TXs].required_approvals    = vote_pass_threshold; // By default the required approvals amount is equal to threshold.
     }
     
-    function rejectTx(uint256 _txID) public onlyOwner
-    {
-        txs[_txID].signed_by[msg.sender] = true;
-        txs[_txID].executed              = true; // Mark Tx as already-executed
-    }
-    
     function approveTx(uint256 _txID) public onlyOwner
     {
         require(!txs[_txID].signed_by[msg.sender], "This Tx is already signed by this owner");
