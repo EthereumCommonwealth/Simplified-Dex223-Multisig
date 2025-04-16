@@ -14,6 +14,7 @@ contract CallistoMultisig {
         mapping (address => bool) signed_by;
         
         uint256 num_approvals;
+        uint256 required_approvals;
     }
     
     mapping (uint256 => Tx)   public txs;
@@ -41,6 +42,10 @@ contract CallistoMultisig {
     // Allow it to receive ERC223 tokens and Funds transfers.
     receive() external payable { }
     fallback() external payable { }
+    function tokenReceived(address _from, uint _value, bytes memory _data) public returns (bytes4)
+    {
+        return 0x8943ec02;
+    }
     
     function executeTx(uint256 _txID) public onlyOwner
     {
@@ -63,7 +68,8 @@ contract CallistoMultisig {
         // Setup system values to keep track on Tx validity and voting.
         txs[num_TXs].proposed_timestamp    = block.timestamp;
         txs[num_TXs].signed_by[msg.sender] = true;
-        txs[num_TXs].num_approvals         = 1; // Well, the one who proposes it approves it obviously.
+        txs[num_TXs].num_approvals         = 1; // The one who proposes it approves it obviously.
+        txs[num_TXs].required_approvals    = vote_pass_threshold; // By default the required approvals amount is equal to threshold.
     }
     
     function rejectTx(uint256 _txID) public onlyOwner
@@ -85,13 +91,24 @@ contract CallistoMultisig {
     
     function txAllowed(uint256 _txID) public view returns (bool)
     {
-        /**
-         * Allows Tx to be executed if ALL owners signed it
-         * or it was proposed 40 days ago and no one voted to reject it.
-         */
         require(!txs[_txID].executed, "Tx already executed or rejected");
-        require(txs[_txID].num_approvals >= vote_pass_threshold || block.timestamp >= txs[_txID].proposed_timestamp + execution_delay, "Tx is not approved by at least one of owners");
+        require(txs[_txID].num_approvals >= txs[_txID].required_approvals, "Tx is not approved by enough owners or deadline expired");
         return true;
+    }
+
+    function reduceApprovalsThreshold(uint256 _txID) public onlyOwner
+    {
+        require(txs[_txID].required_approvals > 1, "Can't reduce votes threshold to 0");
+        uint256 _step;
+        uint256 _current_reduction = vote_pass_threshold - txs[_txID].required_approvals;
+        if(txs[_txID].proposed_timestamp +  (_step + _current_reduction) * execution_delay < block.timestamp)
+        {
+            txs[_txID].required_approvals--;
+        }
+        else
+        {
+            revert("Can't reduce votes threshold for this transaction");
+        }
     }
     
     function addOwner(address _owner) public
