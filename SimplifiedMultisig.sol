@@ -14,6 +14,7 @@ contract CallistoMultisig {
         mapping (address => bool) signed_by;
         
         uint256 num_approvals;
+        uint256 num_votes;
         uint256 required_approvals;
     }
     
@@ -69,6 +70,7 @@ contract CallistoMultisig {
         txs[num_TXs].proposed_timestamp    = block.timestamp;
         txs[num_TXs].signed_by[msg.sender] = true;
         txs[num_TXs].num_approvals         = 1; // The one who proposes it approves it obviously.
+        txs[num_TXs].num_votes             = 1; // The one who proposes it approves it obviously.
         txs[num_TXs].required_approvals    = vote_pass_threshold; // By default the required approvals amount is equal to threshold.
     }
     
@@ -77,10 +79,18 @@ contract CallistoMultisig {
         require(!txs[_txID].signed_by[msg.sender], "This Tx is already signed by this owner");
         txs[_txID].signed_by[msg.sender] = true;
         txs[_txID].num_approvals++;
+        txs[_txID].num_votes++;
         if(txs[_txID].num_approvals >= vote_pass_threshold)
         {
             executeTx(_txID);
         }
+    }
+    
+    function declineTx(uint256 _txID) public onlyOwner
+    {
+        require(!txs[_txID].signed_by[msg.sender], "This Tx is already signed by this owner");
+        txs[_txID].signed_by[msg.sender] = true;
+        txs[_txID].num_votes++;
     }
     
     function txAllowed(uint256 _txID) public view returns (bool)
@@ -92,9 +102,11 @@ contract CallistoMultisig {
 
     function reduceApprovalsThreshold(uint256 _txID) public onlyOwner
     {
-        require(txs[_txID].required_approvals > 1, "Can't reduce votes threshold to 0");
-        uint256 _step;
         uint256 _current_reduction = vote_pass_threshold - txs[_txID].required_approvals;
+        require(txs[_txID].required_approvals > 1, "Can't reduce votes threshold to 0");
+        require(num_owners - txs[_txID].num_votes <= _current_reduction, "Votes against can't be withdrawn");
+        
+        uint256 _step;
         if(txs[_txID].proposed_timestamp +  (_step + _current_reduction) * execution_delay < block.timestamp)
         {
             txs[_txID].required_approvals--;
