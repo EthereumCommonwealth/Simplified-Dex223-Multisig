@@ -15,3 +15,5 @@ The multisig supports a "threshold system" and 3 votes out of 4 are required by 
 There is a vote threshold expiry feature in this multisig that reduces the amount of votes required for a transaction to get approved over time. It operates in cycles (by default a cycle length is 40 days) i.e. for a transaction that was submitted 40 days ago the voting threshold would be reduced by 1. For a transaction submitted 80 days ago the threshold would be reduced by 2.
 
 Threshold can't be less than 1 for security reasons so we wouldn't end up in a situation where 0 owners are required to execute something.
+
+Votes "AGAINST" are recorded and affect the vote threshold reduction feature so that it wouldn't reduce the threshold for proposals that some of the owners don't approve.
