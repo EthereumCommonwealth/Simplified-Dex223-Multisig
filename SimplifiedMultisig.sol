@@ -51,11 +51,10 @@ contract CallistoMultisig {
     function executeTx(uint256 _txID) public onlyOwner
     {
         require(txAllowed(_txID), "Tx is not allowed");
+        txs[_txID].executed = true;
         
         address _destination = txs[_txID].to;
         _destination.call{value:txs[_txID].value}(txs[_txID].data);
-        
-        txs[_txID].executed = true;
     }
     
     function proposeTx(address _to, uint256 _valueInWEI, bytes calldata _data) public onlyOwner
