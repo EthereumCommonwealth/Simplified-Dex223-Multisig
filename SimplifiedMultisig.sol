@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: No License (None)
 pragma solidity ^0.8.0;
 
-contract CallistoMultisig {
+contract Dex223 {
     
     struct Tx
     {
@@ -23,7 +23,7 @@ contract CallistoMultisig {
     uint256 public num_owners;
     uint256 public vote_pass_threshold;
     uint256 public num_TXs         = 0;
-    uint256 public execution_delay = 40 days;
+    uint256 public execution_delay = 10 hours;
     
     modifier onlyOwner
     {
