@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: No License (None)
 pragma solidity ^0.8.0;
 
-contract Dex223 {
+contract Dex223_MultisigV2 {
     
     struct Tx
     {
@@ -140,5 +140,11 @@ contract Dex223 {
     {
         require(msg.sender == address(this), "Only internal voting can adjust the delay");
         vote_pass_threshold = _newThreshold;
+    }
+
+    function getTokenTransferData(address _destination, uint256 _amount) public view returns (bytes memory)
+    {
+        bytes memory _data = abi.encodeWithSelector(bytes4(keccak256("transfer(address,uint256)")), _destination, _amount);
+        return _data;
     }
 }
