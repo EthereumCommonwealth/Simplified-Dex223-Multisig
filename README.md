@@ -20,4 +20,4 @@ Votes "AGAINST" are recorded and affect the vote threshold reduction feature so 
 
 # Deployed instance
 
-https://etherscan.io/address/0xf4986e03848887f31c6ec80b24e182316f4af656#code
+https://etherscan.io/address/0x7d92332c168fe5631fb1ccb1390aa09c661e61ec#code
