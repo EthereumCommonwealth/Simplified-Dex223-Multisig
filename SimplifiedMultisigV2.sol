@@ -40,6 +40,11 @@ contract Dex223_MultisigV2 {
     }
     
     constructor (address _owner1, address _owner2, address _owner3, address _owner4, uint256 _vote_threshold) {
+        // Four distinct non-zero owners, and a threshold they can actually reach.
+        require(_owner1 != address(0) && _owner2 != address(0) && _owner3 != address(0) && _owner4 != address(0), "Zero owner");
+        require(_owner1 != _owner2 && _owner1 != _owner3 && _owner1 != _owner4 &&
+                _owner2 != _owner3 && _owner2 != _owner4 && _owner3 != _owner4, "Duplicate owner");
+        require(_vote_threshold >= 1 && _vote_threshold <= 4, "Invalid threshold");
         owner[_owner1]      = true;
         owner[_owner2]      = true;
         owner[_owner3]      = true;
@@ -58,11 +63,19 @@ contract Dex223_MultisigV2 {
     
     function executeTx(uint256 _txID) public onlyOwner
     {
+        require(_execute(_txID), "Tx execution failed");
+    }
+
+    // A failed call leaves the Tx pending so it can be retried, instead of marking it executed
+    // while nothing happened. `executed` is set before the call so the Tx cannot be re-entered.
+    function _execute(uint256 _txID) internal returns (bool success)
+    {
         require(txAllowed(_txID), "Tx is not allowed");
         txs[_txID].executed = true;
-        
+
         address _destination = txs[_txID].to;
-        _destination.call{value:txs[_txID].value}(txs[_txID].data);
+        (success, ) = _destination.call{value:txs[_txID].value}(txs[_txID].data);
+        if (!success) txs[_txID].executed = false;
     }
     
     function proposeTx(address _to, uint256 _valueInWEI, bytes calldata _data) public onlyOwner
@@ -91,7 +104,8 @@ contract Dex223_MultisigV2 {
         txs[_txID].num_votes++;
         if(txs[_txID].num_approvals >= vote_pass_threshold)
         {
-            executeTx(_txID);
+            // Keep the approval even if the call fails now; any owner can retry with executeTx.
+            _execute(_txID);
         }
     }
     
@@ -115,7 +129,9 @@ contract Dex223_MultisigV2 {
         require(txs[_txID].required_approvals > 1, "Can't reduce votes threshold to 0");
         require(num_owners - txs[_txID].num_votes >= _current_reduction, "Votes against can't be withdrawn");
 
-        uint256 _step;
+        // Each reduction needs one more full delay: the first one is possible only `execution_delay`
+        // after the proposal, not immediately (an uninitialized _step made it immediate).
+        uint256 _step = 1;
         if(txs[_txID].proposed_timestamp +  (_step + _current_reduction) * execution_delay < block.timestamp)
         {
             txs[_txID].required_approvals--;
